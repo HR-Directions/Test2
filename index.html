@@ -3,302 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام مقارنة وتحديد طلبات الشراء</title>
-    <!-- استدعاء خطوط جوجل (Cairo) -->
+    <title>توزيع أرصدة الفروع وتحديد نواقص الشركة</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- استدعاء Tailwind CSS للتصميم -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- استدعاء مكتبة SheetJS للتعامل مع ملفات الإكسيل -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 
     <style>
-        body {
-            font-family: 'Cairo', sans-serif;
-            background-color: #f0f4f8;
-        }
-        .file-upload-wrapper {
+        body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; }
+        .file-input-container {
             position: relative;
             overflow: hidden;
             display: inline-block;
             width: 100%;
         }
-        .file-upload-wrapper input[type=file] {
-            font-size: 100px;
+        .file-input-container input[type=file] {
             position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            cursor: pointer;
-            height: 100%;
+            left: 0; top: 0; opacity: 0;
+            cursor: pointer; height: 100%; width: 100%;
         }
     </style>
 </head>
-<body class="text-gray-800 antialiased min-h-screen flex flex-col items-center justify-center py-10 px-4">
+<body class="text-gray-800 min-h-screen flex flex-col items-center justify-center py-10 px-4">
 
     <div class="max-w-4xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
         <!-- Header -->
-        <div class="bg-gradient-to-l from-blue-700 to-indigo-800 p-8 text-center relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CjxjaXJjbGUgY3g9IjIiIGN5PSIyIiByPSIyIiBmaWxsPSIjZmZmIi8+Cjwvc3ZnPg==')]"></div>
-            <h1 class="text-3xl md:text-4xl font-bold text-white mb-3 relative z-10">نظام تحديد نواقص طلبات الشراء</h1>
-            <p class="text-blue-100 text-sm md:text-lg relative z-10">يقوم بخصم المتاح في الفروع وحساب الكمية المتبقية لطلبها من الشركة</p>
+        <div class="bg-gradient-to-r from-emerald-600 to-teal-700 p-8 text-center text-white">
+            <h1 class="text-3xl font-bold mb-2">نظام توزيع المخزون وتحديد النواقص</h1>
+            <p class="opacity-90">استخراج تقرير تفصيلي لكل فرع مع تحديد المتبقي لطلبه من الشركة</p>
         </div>
 
-        <div class="p-6 md:p-10 space-y-8">
-            
-            <!-- تعليمات -->
-            <div class="bg-indigo-50 border-r-4 border-indigo-500 p-5 rounded-xl shadow-sm">
-                <h3 class="font-bold text-indigo-900 mb-3 text-lg flex items-center">
-                    <svg class="w-6 h-6 ml-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    تعليمات هامة لضمان دقة التقرير:
-                </h3>
-                <ul class="list-disc list-inside text-sm text-indigo-800 space-y-2 font-medium">
-                    <li><strong>ملف أرصدة الفروع:</strong> يجب أن يحتوي على (الكود، الرصيد/الكمية، الفرع).</li>
-                    <li><strong>ملف طلب الشراء:</strong> يجب أن يحتوي على (الكود، الكمية المطلوبة).</li>
-                    <li>سيقوم النظام بتجميع الأرصدة المتفرقة للصنف، وحساب المطلوب من الشركة، وإظهار الأصناف غير المتوفرة نهائياً بالفروع.</li>
-                </ul>
+        <div class="p-8 space-y-8">
+            <!-- Instructions -->
+            <div class="bg-emerald-50 border-r-4 border-emerald-500 p-4 rounded-lg text-emerald-900 text-sm">
+                <strong>كيف يعمل النظام؟</strong>
+                <p>سيقوم النظام بتحليل كل صنف مطلوب، وتوزيع الطلب على الفروع المتاح بها رصيد (كل فرع في سطر)، وحساب الكمية النهائية التي يجب طلبها من الشركة في سطر مستقل.</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- File 1: أرصدة الفروع -->
-                <div class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:bg-gray-50 hover:border-blue-400 transition-all duration-300 group">
-                    <div class="file-upload-wrapper">
-                        <div class="bg-blue-100 text-blue-600 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                            <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                            </svg>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Upload 1 -->
+                <div class="border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center hover:border-emerald-400 transition-colors group">
+                    <div class="file-input-container">
+                        <div class="text-emerald-500 mb-3 group-hover:scale-110 transition-transform">
+                            <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                         </div>
-                        <h4 class="text-xl font-bold text-gray-800 mb-1">ملف أرصدة الفروع</h4>
-                        <p class="text-sm text-gray-500 mt-1 mb-5" id="balances-file-name">لم يتم اختيار ملف (.xlsx)</p>
-                        <button class="bg-white border border-gray-300 text-gray-700 px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm pointer-events-none group-hover:bg-blue-50 group-hover:text-blue-700 group-hover:border-blue-300 transition-colors">تصفح الملف</button>
-                        <input type="file" id="file-balances" accept=".xlsx, .xls, .csv" onchange="updateFileName('file-balances', 'balances-file-name')" />
+                        <h3 class="font-bold text-gray-700">1. أرصدة الفروع</h3>
+                        <p class="text-xs text-gray-400 mb-4" id="txt-balances">اختر ملف الإكسيل</p>
+                        <input type="file" id="input-balances" accept=".xlsx, .xls" onchange="updateLabel('input-balances', 'txt-balances')">
+                        <span class="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg text-xs font-bold uppercase">رفع الملف</span>
                     </div>
                 </div>
 
-                <!-- File 2: طلب الشراء -->
-                <div class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:bg-gray-50 hover:border-indigo-400 transition-all duration-300 group">
-                    <div class="file-upload-wrapper">
-                        <div class="bg-indigo-100 text-indigo-600 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                            <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                            </svg>
+                <!-- Upload 2 -->
+                <div class="border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center hover:border-teal-400 transition-colors group">
+                    <div class="file-input-container">
+                        <div class="text-teal-500 mb-3 group-hover:scale-110 transition-transform">
+                            <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                         </div>
-                        <h4 class="text-xl font-bold text-gray-800 mb-1">ملف طلب الشراء</h4>
-                        <p class="text-sm text-gray-500 mt-1 mb-5" id="purchases-file-name">لم يتم اختيار ملف (.xlsx)</p>
-                        <button class="bg-white border border-gray-300 text-gray-700 px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm pointer-events-none group-hover:bg-indigo-50 group-hover:text-indigo-700 group-hover:border-indigo-300 transition-colors">تصفح الملف</button>
-                        <input type="file" id="file-purchases" accept=".xlsx, .xls, .csv" onchange="updateFileName('file-purchases', 'purchases-file-name')" />
+                        <h3 class="font-bold text-gray-700">2. طلب الشراء</h3>
+                        <p class="text-xs text-gray-400 mb-4" id="txt-purchases">اختر ملف الإكسيل</p>
+                        <input type="file" id="input-purchases" accept=".xlsx, .xls" onchange="updateLabel('input-purchases', 'txt-purchases')">
+                        <span class="bg-teal-100 text-teal-700 px-4 py-2 rounded-lg text-xs font-bold uppercase">رفع الملف</span>
                     </div>
                 </div>
             </div>
 
-            <!-- عرض الرسائل (النجاح/الخطأ) -->
-            <div id="message-box" class="hidden p-5 rounded-xl text-center font-bold text-lg shadow-sm border"></div>
+            <div id="status-msg" class="hidden p-4 rounded-xl text-center font-bold"></div>
 
-            <!-- زر المعالجة -->
-            <div class="text-center mt-8">
-                <button onclick="processFiles()" id="process-btn" class="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-4 px-10 rounded-2xl shadow-xl transform transition hover:-translate-y-1 w-full md:w-auto text-xl flex items-center justify-center mx-auto">
-                    <svg class="w-7 h-7 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    استخراج التقرير النهائي للشركة
-                </button>
-            </div>
-
+            <button onclick="process()" id="btn-run" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center text-lg">
+                <span>توليد تقرير التوزيع النهائي</span>
+            </button>
         </div>
     </div>
 
     <script>
-        // تحديث اسم الملف في الواجهة عند اختياره
-        function updateFileName(inputId, displayId) {
-            const input = document.getElementById(inputId);
-            const display = document.getElementById(displayId);
-            if (input.files && input.files.length > 0) {
-                display.textContent = input.files[0].name;
-                display.classList.add('text-indigo-600', 'font-bold');
-                display.classList.remove('text-gray-500');
-            }
+        function updateLabel(inputId, txtId) {
+            const f = document.getElementById(inputId).files[0];
+            if (f) document.getElementById(txtId).innerText = f.name;
         }
 
-        // عرض رسائل للمستخدم
-        function showMessage(text, type) {
-            const msgBox = document.getElementById('message-box');
-            msgBox.textContent = text;
-            
-            // تنظيف الكلاسات القديمة
-            msgBox.className = 'p-5 rounded-xl text-center font-bold text-lg shadow-sm border transition-all duration-300 mt-6';
-            
-            if (type === 'error') {
-                msgBox.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
-            } else if (type === 'success') {
-                msgBox.classList.add('bg-green-50', 'text-green-700', 'border-green-200');
-            } else if (type === 'warning') {
-                msgBox.classList.add('bg-yellow-50', 'text-yellow-800', 'border-yellow-200');
-            } else {
-                msgBox.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200');
-            }
-            msgBox.classList.remove('hidden');
+        function showMsg(text, isError) {
+            const el = document.getElementById('status-msg');
+            el.innerText = text;
+            el.className = `p-4 rounded-xl text-center font-bold ${isError ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'} mt-4`;
+            el.classList.remove('hidden');
         }
 
-        // قراءة ملف الإكسيل وتحويله إلى JSON
-        function readExcelFile(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const firstSheetName = workbook.SheetNames[0];
-                        const worksheet = workbook.Sheets[firstSheetName];
-                        const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-                        resolve(json);
-                    } catch (error) {
-                        reject(error);
-                    }
-                };
-                reader.onerror = (error) => reject(error);
-                reader.readAsArrayBuffer(file);
-            });
+        async function readExcel(file) {
+            const data = await file.arrayBuffer();
+            const wb = XLSX.read(data);
+            return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
         }
 
-        // دالة مساعدة للبحث عن اسم العمود بمرونة
-        function findColumnKey(row, possibleNames) {
+        function getCol(row, names) {
             const keys = Object.keys(row);
-            for (let name of possibleNames) {
-                const cleanName = name.replace(/\s+/g, '');
-                const foundKey = keys.find(k => k.replace(/\s+/g, '').includes(cleanName));
-                if (foundKey) return foundKey;
+            for (let n of names) {
+                const found = keys.find(k => k.replace(/\s/g, '').includes(n.replace(/\s/g, '')));
+                if (found) return found;
             }
             return null;
         }
 
-        // الدالة الرئيسية للمعالجة
-        async function processFiles() {
-            const fileBalances = document.getElementById('file-balances').files[0];
-            const filePurchases = document.getElementById('file-purchases').files[0];
-            const btn = document.getElementById('process-btn');
+        async function process() {
+            const f1 = document.getElementById('input-balances').files[0];
+            const f2 = document.getElementById('input-purchases').files[0];
+            const btn = document.getElementById('btn-run');
 
-            if (!fileBalances || !filePurchases) {
-                showMessage("الرجاء إرفاق كلا الملفين للبدء.", "error");
-                return;
-            }
+            if (!f1 || !f2) { return showMsg("يرجى اختيار الملفين أولاً", true); }
 
             try {
-                // حالة التحميل
                 btn.disabled = true;
-                btn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-6 w-6 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> جاري معالجة وحساب النواقص...';
-                showMessage("جاري قراءة الملفات وتحليل الأرصدة...", "info");
+                showMsg("جاري معالجة البيانات وتوزيع الكميات...", false);
 
-                const dataBalances = await readExcelFile(fileBalances);
-                const dataPurchases = await readExcelFile(filePurchases);
+                const balances = await readExcel(f1);
+                const purchases = await readExcel(f2);
 
-                if (dataBalances.length === 0) throw new Error("ملف أرصدة الفروع فارغ.");
-                if (dataPurchases.length === 0) throw new Error("ملف طلب الشراء فارغ.");
+                // تنظيم أرصدة الفروع في Map: Code -> [{branch, qty}]
+                const stockMap = new Map();
+                balances.forEach(r => {
+                    const cKey = getCol(r, ['الكود', 'كود', 'code']);
+                    const qKey = getCol(r, ['الرصيد', 'رصيد', 'الكمية', 'qty', 'balance']);
+                    const bKey = getCol(r, ['الفرع', 'فرع', 'branch']);
 
-                // 1. قراءة طلبات الشراء وتجميع الكميات المطلوبة
-                const purchaseItems = new Map();
-                dataPurchases.forEach(row => {
-                    const codeKey = findColumnKey(row, ['الكود', 'كود', 'رقم الصنف', 'رمز', 'code', 'itemcode']);
-                    const nameKey = findColumnKey(row, ['الاسم', 'اسم الصنف', 'الصنف', 'الوصف', 'name', 'description']);
-                    const qtyKey = findColumnKey(row, ['الكمية المطلوبة', 'مطلوب', 'الكمية', 'العدد', 'req', 'qty', 'quantity']);
-
-                    if (codeKey && row[codeKey] !== undefined && row[codeKey] !== "") {
-                        const code = row[codeKey].toString().trim();
-                        const name = nameKey && row[nameKey] ? row[nameKey] : "غير محدد";
-                        // تحويل الكمية لرقم، وإذا لم تكن موجودة نعتبرها 0
-                        const reqQty = qtyKey && row[qtyKey] ? parseFloat(row[qtyKey]) || 0 : 0;
+                    if (cKey) {
+                        const code = String(r[cKey]).trim();
+                        const qty = parseFloat(r[qKey]) || 0;
+                        const branch = String(r[bKey] || "فرع غير معروف").trim();
                         
-                        if (purchaseItems.has(code)) {
-                            purchaseItems.get(code).reqQty += reqQty;
-                        } else {
-                            purchaseItems.set(code, { name, reqQty });
+                        if (qty > 0) {
+                            if (!stockMap.has(code)) stockMap.set(code, []);
+                            stockMap.get(code).push({ branch, qty });
                         }
                     }
                 });
 
-                if (purchaseItems.size === 0) {
-                    throw new Error("لم يتم العثور على عمود 'الكود' في ملف طلب الشراء.");
-                }
+                const finalData = [];
 
-                // 2. قراءة أرصدة الفروع وتجميعها لكل صنف
-                const branchBalances = new Map();
-                dataBalances.forEach(row => {
-                    const codeKey = findColumnKey(row, ['الكود', 'كود', 'رقم الصنف', 'code']);
-                    const balanceKey = findColumnKey(row, ['الرصيد', 'رصيد', 'الكمية', 'كمية', 'balance', 'qty', 'quantity']);
-                    const branchKey = findColumnKey(row, ['الفرع', 'فرع', 'المخزن', 'مخزن', 'branch', 'store']);
+                // معالجة طلبات الشراء
+                purchases.forEach(r => {
+                    const cKey = getCol(r, ['الكود', 'كود', 'code']);
+                    const nKey = getCol(r, ['الاسم', 'اسم الصنف', 'name']);
+                    const qKey = getCol(r, ['الكمية المطلوبة', 'مطلوب', 'qty_req']);
 
-                    if (codeKey && row[codeKey] !== undefined && row[codeKey] !== "") {
-                        const code = row[codeKey].toString().trim();
-                        const balance = balanceKey && row[balanceKey] ? parseFloat(row[balanceKey]) || 0 : 0;
-                        const branchName = branchKey && row[branchKey] ? row[branchKey].toString().trim() : "غير محدد";
+                    if (cKey) {
+                        const code = String(r[cKey]).trim();
+                        const name = nKey ? r[nKey] : "بدون اسم";
+                        let needed = parseFloat(r[qKey]) || 0;
+                        const originalNeeded = needed;
 
-                        if (!branchBalances.has(code)) {
-                            branchBalances.set(code, { total: 0, details: [] });
-                        }
+                        // البحث عن الصنف في الفروع
+                        const branches = stockMap.get(code) || [];
                         
-                        const record = branchBalances.get(code);
-                        record.total += balance;
-                        if (balance > 0) {
-                            record.details.push(`${branchName} (${balance})`);
+                        branches.forEach(b => {
+                            if (needed > 0) {
+                                // الكمية اللي هاخدها من الفرع ده هي الأصغر بين (المطلوب) و (المتاح في الفرع)
+                                const taken = Math.min(needed, b.qty);
+                                if (taken > 0) {
+                                    finalData.push({
+                                        "كود الصنف": code,
+                                        "اسم الصنف": name,
+                                        "إجمالي الطلب الأصلي": originalNeeded,
+                                        "الجهة (المصدر)": b.branch,
+                                        "الكمية المطلوبة من هذه الجهة": taken,
+                                        "الحالة": "سحب من فرع"
+                                    });
+                                    needed -= taken;
+                                }
+                            }
+                        });
+
+                        // إذا لسه فيه كمية مطلوبة بعد استنفاد الفروع، تطلب من الشركة
+                        if (needed > 0) {
+                            finalData.push({
+                                "كود الصنف": code,
+                                "اسم الصنف": name,
+                                "إجمالي الطلب الأصلي": originalNeeded,
+                                "الجهة (المصدر)": "الشركة (مورد خارجي)",
+                                "الكمية المطلوبة من هذه الجهة": needed,
+                                "الحالة": "شراء جديد (نواقص)"
+                            });
+                        } else if (originalNeeded === 0) {
+                            // حالة صنف مكتوب في الشيت بس كميته صفر
+                             finalData.push({
+                                "كود الصنف": code,
+                                "اسم الصنف": name,
+                                "إجمالي الطلب الأصلي": 0,
+                                "الجهة (المصدر)": "-",
+                                "الكمية المطلوبة من هذه الجهة": 0,
+                                "الحالة": "طلب صفري"
+                            });
                         }
                     }
                 });
 
-                // 3. مطابقة البيانات وحساب النواقص لطلبها من الشركة
-                const results = [];
-                purchaseItems.forEach((data, code) => {
-                    const required = data.reqQty;
-                    const balanceData = branchBalances.get(code) || { total: 0, details: [] };
-                    const available = balanceData.total;
-                    
-                    // حساب المتبقي لطلبه من الشركة (إذا كان المتاح أكبر من المطلوب، فالمتبقي صفر)
-                    const remainingToOrder = Math.max(0, required - available);
-                    
-                    // صياغة تفاصيل الفروع كنص
-                    const branchStr = balanceData.details.length > 0 
-                        ? balanceData.details.join(" ، ") 
-                        : "غير متوفر بأي فرع (يطلب بالكامل)";
-
-                    results.push({
-                        "كود الصنف": code,
-                        "اسم الصنف": data.name,
-                        "إجمالي الكمية المطلوبة": required,
-                        "المتاح في الفروع": available,
-                        "الكمية المطلوب شرائها من الشركة": remainingToOrder,
-                        "الفروع المتاح بها (الكمية)": branchStr
-                    });
-                });
-
-                // ترتيب النتائج: إظهار الأصناف التي تحتاج لطلب من الشركة أولاً
-                results.sort((a, b) => b["الكمية المطلوب شرائها من الشركة"] - a["الكمية المطلوب شرائها من الشركة"]);
-
-                // 4. التصدير
-                const worksheet = XLSX.utils.json_to_sheet(results);
+                // تصدير النتائج
+                const ws = XLSX.utils.json_to_sheet(finalData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "تقرير التوزيع");
                 
-                // تنسيق عرض الأعمدة في الإكسيل لتكون واضحة
-                worksheet['!cols'] = [
-                    { wch: 15 }, // الكود
-                    { wch: 40 }, // الاسم
-                    { wch: 22 }, // الكمية المطلوبة
-                    { wch: 20 }, // المتاح بالفروع
-                    { wch: 30 }, // المطلوب شرائه
-                    { wch: 50 }  // تفاصيل الفروع
-                ];
-
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "تقرير الشراء النهائي");
+                // تحسين العرض
+                ws['!cols'] = [{wch:15}, {wch:35}, {wch:18}, {wch:25}, {wch:25}, {wch:20}];
                 
-                XLSX.writeFile(workbook, "تقرير_طلبات_الشركة_والنواقص.xlsx");
-                
-                showMessage(`تمت المعالجة بنجاح! تم تحليل ${results.length} صنف. جاري تحميل التقرير النهائي...`, "success");
+                XLSX.writeFile(wb, "تقرير_توزيع_الطلبات_على_الفروع.xlsx");
+                showMsg("تم استخراج التقرير بنجاح! يمكنك الآن الفلترة حسب عمود (الجهة) لإرسال الطلبات.", false);
 
-            } catch (error) {
-                console.error(error);
-                showMessage(error.message, "error");
+            } catch (e) {
+                console.error(e);
+                showMsg("حدث خطأ أثناء المعالجة: " + e.message, true);
             } finally {
-                // إعادة الزر
                 btn.disabled = false;
-                btn.innerHTML = '<svg class="w-7 h-7 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> استخراج التقرير النهائي للشركة';
             }
         }
     </script>
 </body>
 </html>
-
 
