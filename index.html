@@ -30,13 +30,25 @@ button{padding:8px 15px;border:none;border-radius:6px;cursor:pointer;font-weight
 .btn-group {display:flex; gap:10px; margin-top:15px;}
 .success-icon {font-size: 40px; color: #27ae60; margin-bottom: 10px;}
 
-/* إعدادات الطباعة الحرارية */
+/* إعدادات الطباعة المعدلة حسب الطلب */
 @media print {
+    @page {
+        size: 100mm 148mm;
+        margin: 0;
+    }
     body * { visibility: hidden; }
     #thermalArea, #thermalArea * { visibility: visible; }
     #thermalArea {
-        position: absolute; left: 0; top: 0; width: 80mm; padding: 0; margin: 0;
-        font-family: 'Tahoma', sans-serif; direction: rtl; color: #000;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 80mm; /* العرض المطلوب 80mm */
+        padding: 5mm;
+        margin: 0;
+        font-family: 'Tahoma', sans-serif;
+        direction: rtl;
+        color: #000;
+        zoom: 89%; /* السكيل المطلوب 89% */
     }
     .print-header { text-align: center; margin-bottom: 10px; }
     .header-branch-name { margin: 5px 0; font-size: 18px; }
@@ -239,7 +251,6 @@ firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
 let currentSavedData = null;
-const logoUrl = ""; 
 
 let loginBtn=document.getElementById("loginBtn"), loginCode=document.getElementById("loginCode"), loginPassword=document.getElementById("loginPassword"), loginError=document.getElementById("loginError"), loginPopup=document.getElementById("loginPopup"), mainContainer=document.getElementById("mainContainer"), branchSelect=document.getElementById("branch");
 let dateInput=document.getElementById("date"), dayInput=document.getElementById("day"), cash=document.getElementById("cash"), instaTotal=document.getElementById("instaTotal"), walletTotal=document.getElementById("walletTotal"), visaTotal=document.getElementById("visaTotal"), total=document.getElementById("total"), actual=document.getElementById("actual"), diff=document.getElementById("diff");
